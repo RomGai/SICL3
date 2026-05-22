@@ -69,8 +69,11 @@ class InferPipeline:
     def _build_icl_prompt(self, query: str, contexts: list[ContextExample]) -> str:
         lines = [
             "You are a visual question answering assistant.",
-            "I will provide context examples first, each with an image and a Q/A pair.",
-            "Then I will provide a target image and target question.",
+            "You will receive multiple images in this exact order:",
+            "1) context images for Context #1..#N (same order as listed below),",
+            "2) the final image is the target image.",
+            "For each context image, use its paired question+answer as reasoning reference.",
+            "When answering the target question, explicitly ground your reasoning in visual patterns learned from the context images and the target image.",
             "First reason based on the context examples and the target image, then answer the final target question.",
             "Output format must be exactly:",
             "Reasoning: <step-by-step reasoning>",
