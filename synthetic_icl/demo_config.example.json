@@ -25,7 +25,8 @@
     "output_dir": "synthetic_outputs",
     "log_json_path": "synthetic_outputs/run_log.json",
     "test_pt_path": "synthetic_icl/test_data/test_CharXiv.pt",
-    "infer_output_json": "infer/infer_results.json"
+    "infer_output_json": "infer/infer_results.json",
+    "debug_output_dir": "synthetic_outputs_debug"
   },
   "infer_mllm_api": {
     "api_key": "",

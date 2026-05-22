@@ -31,6 +31,27 @@ def _save_generated_images(examples: list[SyntheticExample], output_dir: Path) -
         example.verification_result.setdefault("saved_image_path", str(image_path.resolve()))
 
 
+
+
+def _default_debug_output_dir(output_dir: Path) -> Path:
+    return output_dir.parent / f"{output_dir.name}_debug"
+
+
+def _save_attempt_artifacts(attempt_artifacts: list[dict[str, Any]], debug_dir: Path) -> None:
+    debug_dir.mkdir(parents=True, exist_ok=True)
+    for idx, item in enumerate(attempt_artifacts):
+        image = item.get("image")
+        if image is None:
+            continue
+        scenario_id = str(item.get("scenario_id", f"scenario_{idx:03d}"))
+        try_idx = int(item.get("try", 0))
+        verification = item.get("verification", {}) if isinstance(item.get("verification"), dict) else {}
+        is_valid = bool(verification.get("is_valid_demo"))
+        status = "pass" if is_valid else "fail"
+        route = str(item.get("route", "unknown"))
+        image_path = debug_dir / f"{idx:03d}_s-{scenario_id}_t-{try_idx}_{status}_{route}.png"
+        image.save(image_path)
+
 def _save_dataset_case_assets(case_dir: Path, case_idx: int, image_bytes: bytes, prompt: str, groundtruth: str) -> None:
     import importlib.util
 
@@ -49,6 +70,18 @@ def _save_dataset_case_assets(case_dir: Path, case_idx: int, image_bytes: bytes,
         },
         case_dir / "meta.json",
     )
+
+
+def _dataset_case_already_processed(case_dir: Path, log_json_path: str | None) -> bool:
+    if not case_dir.exists():
+        return False
+    if any(case_dir.glob("*_gt.*")) and any(case_dir.glob("*.png")):
+        return True
+    if log_json_path:
+        expected_log_name = Path(log_json_path).name
+        if (case_dir / expected_log_name).exists():
+            return True
+    return False
 
 
 def _iter_test_pt_cases(test_pt_path: Path):
@@ -133,6 +166,7 @@ def main() -> None:
     parser.add_argument("--output-dir", help="Directory for generated images.")
     parser.add_argument("--test-pt-path", help="Path to a .pt test dataset containing prompt/groundtruth/image bytes entries.")
     parser.add_argument("--log-json-path", help="Path to save detailed intermediate pipeline log JSON.")
+    parser.add_argument("--debug-output-dir", help="Directory for saving intermediate/failed attempt images.")
     parser.add_argument("--mllm-api-key", help="Override MLLM API key (or set in config/env).")
     parser.add_argument("--mllm-base-url", help="Override MLLM base URL (or set in config/env).")
     parser.add_argument("--mllm-model-name", help="Override MLLM model name (or set in config/env).")
@@ -165,6 +199,7 @@ def main() -> None:
     output_dir = _coalesce(args.output_dir, run_cfg, "output_dir") or "synthetic_outputs"
     test_pt_path_raw = _coalesce(args.test_pt_path, run_cfg, "test_pt_path")
     log_json_path = _coalesce(args.log_json_path, run_cfg, "log_json_path")
+    debug_output_dir_raw = _coalesce(args.debug_output_dir, run_cfg, "debug_output_dir")
 
     test_pt_path = Path(test_pt_path_raw) if test_pt_path_raw else None
     if test_pt_path is None:
@@ -199,10 +234,14 @@ def main() -> None:
     if hasattr(pipeline.answer_sampling_module, "format_retry_times"):
         pipeline.answer_sampling_module.format_retry_times = max(0, answer_sampling_format_retry_times)
     output_root = Path(output_dir)
+    debug_output_root = Path(debug_output_dir_raw) if debug_output_dir_raw else _default_debug_output_dir(output_root)
 
     if test_pt_path is not None:
         for idx, prompt, groundtruth, image_bytes in _iter_test_pt_cases(test_pt_path):
             case_dir = output_root / str(idx)
+            if _dataset_case_already_processed(case_dir, log_json_path):
+                print(f"Skipping existing case_dir (already processed): {case_dir}")
+                continue
             _save_dataset_case_assets(case_dir, idx, image_bytes, prompt, groundtruth)
 
             with Image.open(io.BytesIO(image_bytes)) as img:
@@ -224,6 +263,7 @@ def main() -> None:
 
             if not dry_run:
                 _save_generated_images(pipeline.last_candidates, case_dir)
+                _save_attempt_artifacts(pipeline.last_attempt_artifacts, debug_output_root / str(idx))
     
             if log_json_path:
                 _save_json_log(pipeline.last_run_log, case_dir / Path(log_json_path).name)
@@ -253,6 +293,7 @@ def main() -> None:
 
         if not dry_run:
             _save_generated_images(pipeline.last_candidates, output_root)
+            _save_attempt_artifacts(pipeline.last_attempt_artifacts, debug_output_root)
 
         if log_json_path:
             _save_json_log(pipeline.last_run_log, Path(log_json_path))
