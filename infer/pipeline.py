@@ -71,7 +71,10 @@ class InferPipeline:
             "You are a visual question answering assistant.",
             "I will provide context examples first, each with an image and a Q/A pair.",
             "Then I will provide a target image and target question.",
-            "Answer ONLY the final target question briefly.",
+            "First reason based on the context examples and the target image, then answer the final target question.",
+            "Output format must be exactly:",
+            "Reasoning: <step-by-step reasoning>",
+            "Final answer: <concise final answer>",
             "",
         ]
         for idx, ctx in enumerate(contexts, start=1):
@@ -80,6 +83,13 @@ class InferPipeline:
         lines.append("")
         lines.append(f"Target question: {query}")
         return "\n".join(lines)
+
+    @staticmethod
+    def _extract_final_answer(text: str) -> str:
+        marker = "Final answer:"
+        if marker in text:
+            return text.split(marker, 1)[1].strip()
+        return text.strip()
 
     def infer_case(self, case_dir: Path) -> dict[str, Any]:
         meta = self._load_case_meta(case_dir)
@@ -112,6 +122,7 @@ class InferPipeline:
             "groundtruth": meta["groundtruth"],
             "raw_result": raw_answer,
             "icl_result": icl_answer,
+            "icl_final_answer": self._extract_final_answer(icl_answer),
             "num_context_examples": len(contexts),
             "gt_image_path": str(gt_path),
         }
