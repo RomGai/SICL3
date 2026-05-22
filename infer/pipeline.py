@@ -87,8 +87,13 @@ class InferPipeline:
     @staticmethod
     def _extract_final_answer(text: str) -> str:
         marker = "Final answer:"
+        lines = text.splitlines()
+        for line in reversed(lines):
+            stripped = line.strip()
+            if stripped.startswith(marker):
+                return stripped[len(marker):].strip()
         if marker in text:
-            return text.split(marker, 1)[1].strip()
+            return text.rsplit(marker, 1)[1].strip()
         return text.strip()
 
     def infer_case(self, case_dir: Path) -> dict[str, Any]:
