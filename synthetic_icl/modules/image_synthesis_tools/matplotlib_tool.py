@@ -27,6 +27,7 @@ Constraints:
 - Use matplotlib (+numpy, io, PIL allowed).
 - Always include explicit imports for every module you use (for example: import numpy as np).
 - Produce Python code that sets variable output_image to a PIL Image.
+- Force a pure white chart background (figure and axes facecolor must be #FFFFFF with no transparency).
 - Emphasize task-answerability over visual style, but keep style moderately aligned.
 """.strip()
         parsed = llm_json_call_with_retry(lambda: self.backbone.generate_response_text(prompt), max_attempts=3)
