@@ -31,7 +31,7 @@ class MLLMBackbone:
         base_url: str | None = None,
         model: str | None = None,
         min_interval: float = 0.5,
-        max_tokens: int = 4096,
+        max_tokens: int = 16384,
     ) -> None:
         from openai import APIConnectionError, APIError, OpenAI, RateLimitError
 

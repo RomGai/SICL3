@@ -27,6 +27,7 @@ Constraints:
 - Use plotly (and helpers such as PIL/io).
 - Always include explicit imports for every module you use (for example: import numpy as np).
 - Produce Python code that sets variable output_image to a PIL Image.
+- Force a pure white chart background (plot and paper backgrounds must both be #FFFFFF with no transparency).
 - Prioritize task-answerability, then moderate style alignment.
 """.strip()
         parsed = llm_json_call_with_retry(lambda: self.backbone.generate_response_text(prompt), max_attempts=3)
