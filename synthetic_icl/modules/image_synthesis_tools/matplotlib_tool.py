@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import json
+import io
 from typing import Any
+
+import numpy as np
+from PIL import Image
 
 from synthetic_icl.backbone import MLLMBackbone
 from synthetic_icl.json_utils import llm_json_call_with_retry
@@ -21,6 +25,7 @@ Return JSON with fields: plan_steps (list), implementation_spec (object), render
 Context:\n{json.dumps(context, ensure_ascii=False, indent=2)}
 Constraints:
 - Use matplotlib (+numpy, io, PIL allowed).
+- Always include explicit imports for every module you use (for example: import numpy as np).
 - Produce Python code that sets variable output_image to a PIL Image.
 - Emphasize task-answerability over visual style, but keep style moderately aligned.
 """.strip()
@@ -43,7 +48,13 @@ Constraints:
         if not code:
             raise ValueError("matplotlib planner returned empty code")
         scope: dict[str, Any] = {}
-        exec(code, {"__builtins__": __builtins__}, scope)
+        exec_globals: dict[str, Any] = {
+            "__builtins__": __builtins__,
+            "np": np,
+            "io": io,
+            "Image": Image,
+        }
+        exec(code, exec_globals, scope)
         image = scope.get("output_image")
         if image is None:
             raise ValueError("matplotlib code did not define output_image")

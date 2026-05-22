@@ -117,7 +117,7 @@ class InferPipeline:
         }
 
     def run(self, synthetic_output_dir: Path, output_json_path: Path) -> list[dict[str, Any]]:
-        case_dirs = sorted([p for p in synthetic_output_dir.iterdir() if p.is_dir()], key=lambda p: int(p.name) if p.name.isdigit() else p.name)
+        case_dirs = sorted((p for p in synthetic_output_dir.iterdir() if p.is_dir() and p.name.isdigit()), key=lambda p: int(p.name))
         results = [self.infer_case(case_dir) for case_dir in case_dirs]
         output_json_path.parent.mkdir(parents=True, exist_ok=True)
         output_json_path.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")

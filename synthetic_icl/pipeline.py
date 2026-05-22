@@ -38,6 +38,7 @@ class SyntheticICLPipeline:
         self.last_candidates: list[SyntheticExample] = []
         self.last_run_log: dict[str, Any] = {}
         self.last_attempt_traces: list[dict[str, Any]] = []
+        self.last_attempt_artifacts: list[dict[str, Any]] = []
         self.logger = logging.getLogger(__name__)
 
     _T = TypeVar("_T")
@@ -91,6 +92,7 @@ class SyntheticICLPipeline:
         scenarios_by_id = {s.scenario_id: s for s in scenarios}
         candidates: list[SyntheticExample] = []
         traces: list[dict[str, Any]] = []
+        attempt_artifacts: list[dict[str, Any]] = []
 
         for answer_spec in answer_specs:
             scenario = scenarios_by_id.get(answer_spec.scenario_id)
@@ -142,6 +144,13 @@ class SyntheticICLPipeline:
                     continue
                 last_verification = verification
                 traces.append({"scenario_id": scenario.scenario_id, "route": bundle.route, "try": try_idx + 1, "verification": verification})
+                attempt_artifacts.append({
+                    "scenario_id": scenario.scenario_id,
+                    "try": try_idx + 1,
+                    "route": bundle.route,
+                    "verification": verification,
+                    "image": bundle.image.copy(),
+                })
                 if bool(verification.get("is_valid_demo")):
                     final_bundle = bundle
                     break
@@ -158,5 +167,6 @@ class SyntheticICLPipeline:
         selected = self.selection_module.run(candidates, top_k)
         self.last_candidates = candidates
         self.last_attempt_traces = traces
+        self.last_attempt_artifacts = attempt_artifacts
         self.last_run_log = {"router": router_decision, "selected_examples": [e.to_metadata_dict() for e in selected]}
         return selected
