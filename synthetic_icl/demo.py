@@ -41,7 +41,7 @@ def _save_dataset_case_assets(case_dir: Path, case_idx: int, image_bytes: bytes,
 
     case_dir.mkdir(parents=True, exist_ok=True)
     with Image.open(io.BytesIO(image_bytes)) as gt_img:
-        gt_img.convert("RGB").save(case_dir / f"{case_idx}_gt.png")
+        gt_img.convert("RGB").save(case_dir / f"{case_idx}_gt.jpg")
     _save_json_log(
         {
             "prompt": prompt,
@@ -131,6 +131,7 @@ def main() -> None:
         ),
     )
     parser.add_argument("--output-dir", help="Directory for generated images.")
+    parser.add_argument("--test-pt-path", help="Path to a .pt test dataset containing prompt/groundtruth/image bytes entries.")
     parser.add_argument("--log-json-path", help="Path to save detailed intermediate pipeline log JSON.")
     parser.add_argument("--mllm-api-key", help="Override MLLM API key (or set in config/env).")
     parser.add_argument("--mllm-base-url", help="Override MLLM base URL (or set in config/env).")
@@ -162,7 +163,7 @@ def main() -> None:
     )
     image_generation_pipe = _coalesce(args.image_generation_pipe, run_cfg, "image_generation_pipe") or "code_synthesis"
     output_dir = _coalesce(args.output_dir, run_cfg, "output_dir") or "synthetic_outputs"
-    test_pt_path_raw = _coalesce(None, run_cfg, "test_pt_path")
+    test_pt_path_raw = _coalesce(args.test_pt_path, run_cfg, "test_pt_path")
     log_json_path = _coalesce(args.log_json_path, run_cfg, "log_json_path")
 
     test_pt_path = Path(test_pt_path_raw) if test_pt_path_raw else None
