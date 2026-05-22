@@ -69,9 +69,15 @@ class InferPipeline:
     def _build_icl_prompt(self, query: str, contexts: list[ContextExample]) -> str:
         lines = [
             "You are a visual question answering assistant.",
-            "I will provide context examples first, each with an image and a Q/A pair.",
-            "Then I will provide a target image and target question.",
-            "Answer ONLY the final target question briefly.",
+            "You will receive multiple images in this exact order:",
+            "1) context images for Context #1..#N (same order as listed below),",
+            "2) the final image is the target image.",
+            "For each context image, use its paired question+answer as reasoning reference.",
+            "When answering the target question, explicitly ground your reasoning in visual patterns learned from the context images and the target image.",
+            "First reason based on the context examples and the target image, then answer the final target question.",
+            "Output format must be exactly:",
+            "Reasoning: <step-by-step reasoning>",
+            "Final answer: <concise final answer>",
             "",
         ]
         for idx, ctx in enumerate(contexts, start=1):
@@ -80,6 +86,18 @@ class InferPipeline:
         lines.append("")
         lines.append(f"Target question: {query}")
         return "\n".join(lines)
+
+    @staticmethod
+    def _extract_final_answer(text: str) -> str:
+        marker = "Final answer:"
+        lines = text.splitlines()
+        for line in reversed(lines):
+            stripped = line.strip()
+            if stripped.startswith(marker):
+                return stripped[len(marker):].strip()
+        if marker in text:
+            return text.rsplit(marker, 1)[1].strip()
+        return text.strip()
 
     def infer_case(self, case_dir: Path) -> dict[str, Any]:
         meta = self._load_case_meta(case_dir)
@@ -112,13 +130,28 @@ class InferPipeline:
             "groundtruth": meta["groundtruth"],
             "raw_result": raw_answer,
             "icl_result": icl_answer,
+            "icl_final_answer": self._extract_final_answer(icl_answer),
             "num_context_examples": len(contexts),
             "gt_image_path": str(gt_path),
         }
 
-    def run(self, synthetic_output_dir: Path, output_json_path: Path) -> list[dict[str, Any]]:
+    def run(
+        self,
+        synthetic_output_dir: Path,
+        output_json_path: Path,
+        per_case_output_dir: Path | None = None,
+    ) -> list[dict[str, Any]]:
         case_dirs = sorted((p for p in synthetic_output_dir.iterdir() if p.is_dir() and p.name.isdigit()), key=lambda p: int(p.name))
-        results = [self.infer_case(case_dir) for case_dir in case_dirs]
+        results: list[dict[str, Any]] = []
+        if per_case_output_dir is not None:
+            per_case_output_dir.mkdir(parents=True, exist_ok=True)
+        for case_dir in case_dirs:
+            case_result = self.infer_case(case_dir)
+            results.append(case_result)
+            if per_case_output_dir is not None:
+                case_id = str(case_result.get("case", case_dir.name))
+                case_path = per_case_output_dir / f"case_{case_id}.json"
+                case_path.write_text(json.dumps(case_result, ensure_ascii=False, indent=2), encoding="utf-8")
         output_json_path.parent.mkdir(parents=True, exist_ok=True)
         output_json_path.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
         return results
