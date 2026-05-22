@@ -116,9 +116,23 @@ class InferPipeline:
             "gt_image_path": str(gt_path),
         }
 
-    def run(self, synthetic_output_dir: Path, output_json_path: Path) -> list[dict[str, Any]]:
+    def run(
+        self,
+        synthetic_output_dir: Path,
+        output_json_path: Path,
+        per_case_output_dir: Path | None = None,
+    ) -> list[dict[str, Any]]:
         case_dirs = sorted((p for p in synthetic_output_dir.iterdir() if p.is_dir() and p.name.isdigit()), key=lambda p: int(p.name))
-        results = [self.infer_case(case_dir) for case_dir in case_dirs]
+        results: list[dict[str, Any]] = []
+        if per_case_output_dir is not None:
+            per_case_output_dir.mkdir(parents=True, exist_ok=True)
+        for case_dir in case_dirs:
+            case_result = self.infer_case(case_dir)
+            results.append(case_result)
+            if per_case_output_dir is not None:
+                case_id = str(case_result.get("case", case_dir.name))
+                case_path = per_case_output_dir / f"case_{case_id}.json"
+                case_path.write_text(json.dumps(case_result, ensure_ascii=False, indent=2), encoding="utf-8")
         output_json_path.parent.mkdir(parents=True, exist_ok=True)
         output_json_path.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
         return results

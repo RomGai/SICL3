@@ -27,7 +27,6 @@ class GenerationPromptConstructionModule:
         answer_spec: AnswerSpec,
         original_query: str,
     ) -> GenerationPromptSpec:
-        _ = original_image
         prompt = f"""
 You are writing an image-generation prompt for a reference-image-conditioned image generator.
 
@@ -46,13 +45,12 @@ Original query that must remain unchanged:
 Construct a GenerationPromptSpec.
 
 The image_generation_prompt MUST explicitly require all of the following:
-1. Use the original image as a visual reference for task-related style, layout, visual organization, labels, relationships, or expression mode.
+1. Use the original image as a visual reference for task-related style, layout, visual organization, labels, relationships, expression mode, and background color.
 2. Do not copy the original image's exact content, objects, text, data values, or scene specifics.
 3. Generate a new image in the new scenario.
 4. The new image must be answerable by the exact original_query, with no new or rewritten query.
 5. The correct known answer must be exactly AnswerSpec.answer.
 6. The visual evidence must clearly support the known answer and avoid ambiguity.
-
 Return ONLY strict JSON with schema:
 {{
   "scenario_id": string,
@@ -64,6 +62,7 @@ Return ONLY strict JSON with schema:
   "must_avoid": [string]
 }}
 """.strip()
+        _ = original_image
         raw = self.backbone.generate_response_text(prompt)
         parsed = robust_json_parse(raw)
         if not isinstance(parsed, dict):
