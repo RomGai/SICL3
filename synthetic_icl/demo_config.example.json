@@ -31,6 +31,6 @@
   "infer_mllm_api": {
     "api_key": "",
     "base_url": "https://ai.juguang.chat/v1",
-    "model_name": "gemini-2.5-flash"
+    "model_name": "gemini-3-flash-preview-thinking"
   }
 }
