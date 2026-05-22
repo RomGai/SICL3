@@ -30,6 +30,7 @@ def main() -> None:
     parser.add_argument("--config", help="Path to config JSON.")
     parser.add_argument("--synthetic-output-dir", help="Path to synthetic output cases (0,1,2,...).")
     parser.add_argument("--output-json", help="Path to save inference comparison JSON.")
+    parser.add_argument("--per-case-output-dir", help="Directory to save one JSON file per case.")
     parser.add_argument("--infer-api-key", help="Override infer MLLM API key.")
     parser.add_argument("--infer-base-url", help="Override infer MLLM base URL.")
     parser.add_argument("--infer-model-name", help="Override infer MLLM model name.")
@@ -41,6 +42,10 @@ def main() -> None:
 
     synthetic_output_dir = Path(_coalesce(args.synthetic_output_dir, run_cfg, "output_dir") or "synthetic_outputs")
     output_json = Path(_coalesce(args.output_json, run_cfg, "infer_output_json") or "infer/infer_results.json")
+    per_case_output_dir = Path(
+        _coalesce(args.per_case_output_dir, run_cfg, "infer_per_case_output_dir")
+        or (output_json.parent / f"{output_json.stem}_cases")
+    )
 
     backbone = MLLMBackbone(
         api_key=_coalesce(args.infer_api_key, infer_cfg, "api_key"),
@@ -49,8 +54,9 @@ def main() -> None:
     )
 
     pipeline = InferPipeline(backbone)
-    pipeline.run(synthetic_output_dir, output_json)
+    pipeline.run(synthetic_output_dir, output_json, per_case_output_dir=per_case_output_dir)
     print(f"Saved inference comparison to: {output_json}")
+    print(f"Saved per-case inference files to: {per_case_output_dir}")
 
 
 if __name__ == "__main__":

@@ -33,6 +33,7 @@ Rules:
 - query_invariance_rule must explicitly state that synthetic examples must use exactly original_query.
 - candidate_answer_space should contain plausible labels/values for answers whenever possible.
 - image_generation_requirements must describe task-relevant style/layout/evidence to preserve while avoiding copying exact original content.
+- If Image-query understanding JSON includes background_style_hint, reflect it in image_generation_requirements as reusable style guidance.
 - verification_criteria must be actionable checks for later validation.
 
 Return ONLY strict JSON matching this schema:

@@ -34,17 +34,19 @@ original_query: {json.dumps(original_query, ensure_ascii=False)}
 Analyze:
 1. image type and visual domain
 2. scene summary
-3. target entities / regions / labels referenced by the query
-4. attributes or relations being queried
-5. likely task family
-6. visual evidence needed to answer
-7. ambiguity risks if new images are generated
+3. background color cues
+4. target entities / regions / labels referenced by the query
+5. attributes or relations being queried
+6. likely task family
+7. visual evidence needed to answer
+8. ambiguity risks if new images are generated
 
 Return ONLY valid JSON with this schema:
 {{
   "original_query": string,
   "image_type": string,
   "scene_summary": string,
+  "background_style_hint": string,
   "task_family": "comparison|counting|localization|recognition|OCR|spatial_relation|chart_reasoning|document_understanding|UI_understanding|anomaly_detection|visual_reasoning|other",
   "reasoning_type": string,
   "target_entities": [string],
