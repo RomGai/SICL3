@@ -1,11 +1,11 @@
 {
   "mllm": {
-    "api_key": "sk-dGZZdFacB6dZ79DtPLy4rQd9mq0dxgxUBZ2xa4PIHTsNKZdh",
+    "api_key": "",
     "base_url": "https://ai.juguang.chat/v1",
     "model_name": "gemini-3-flash-preview-thinking"
   },
   "coding_mllm": {
-    "api_key": "sk-dGZZdFacB6dZ79DtPLy4rQd9mq0dxgxUBZ2xa4PIHTsNKZdh",
+    "api_key": "",
     "base_url": "https://ai.juguang.chat/v1",
     "model_name": "[0.4刀/次]gemini-3.5-flash"
   },
@@ -28,7 +28,7 @@
     "infer_output_json": "infer/infer_results.json"
   },
   "infer_mllm_api": {
-    "api_key": "sk-dGZZdFacB6dZ79DtPLy4rQd9mq0dxgxUBZ2xa4PIHTsNKZdh",
+    "api_key": "",
     "base_url": "https://ai.juguang.chat/v1",
     "model_name": "gemini-2.5-flash"
   }
