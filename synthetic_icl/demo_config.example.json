@@ -18,7 +18,7 @@
     "generation_retry_rounds": 2,
     "verification_retry_rounds": 2,
     "num_answers_per_scenario": 1,
-    "top_k": 3,
+    "top_k": 5,
     "preserve_original_query": true,
     "image_generation_pipe": "code_synthesis",
     "dry_run": false,
