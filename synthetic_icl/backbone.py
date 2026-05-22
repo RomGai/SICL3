@@ -7,10 +7,9 @@ import os
 import random
 import time
 from io import BytesIO
-from typing import TYPE_CHECKING, Any
 
-if TYPE_CHECKING:
-    from PIL import Image
+from PIL import Image
+from typing import Any
 
 DEFAULT_BASE_URL = "https://ai.juguang.chat/v1"
 DEFAULT_MODEL_NAME = "gemini-3-flash-preview-thinking"
@@ -32,6 +31,7 @@ class MLLMBackbone:
         model: str | None = None,
         min_interval: float = 0.5,
         max_tokens: int = 16384,
+        max_image_side: int = 1568,
     ) -> None:
         from openai import APIConnectionError, APIError, OpenAI, RateLimitError
 
@@ -39,6 +39,7 @@ class MLLMBackbone:
         self.base_url = base_url or os.getenv("MLLM_BASE_URL", DEFAULT_BASE_URL)
         self.model = model or os.getenv("MLLM_MODEL_NAME", DEFAULT_MODEL_NAME)
         self.max_tokens = max_tokens
+        self.max_image_side = max_image_side
         self._last_request_time = 0.0
         self._min_interval = min_interval
         self._rate_limit_error = RateLimitError
@@ -53,10 +54,22 @@ class MLLMBackbone:
             time.sleep(self._min_interval - elapsed)
         self._last_request_time = time.time()
 
-    @staticmethod
-    def pil_to_base64(img: Image.Image) -> str:
+    def _prepare_image(self, img: Image.Image) -> Image.Image:
+        if self.max_image_side <= 0:
+            return img.copy()
+        prepared = img.copy()
+        prepared.thumbnail((self.max_image_side, self.max_image_side), Image.Resampling.LANCZOS)
+        return prepared
+
+    def pil_to_base64(self, img: Image.Image) -> str:
+        img = self._prepare_image(img)
         buffered = BytesIO()
-        img.save(buffered, format="PNG")
+        has_alpha = "A" in img.getbands()
+        if has_alpha:
+            img.save(buffered, format="PNG", optimize=True)
+        else:
+            rgb = img if img.mode == "RGB" else img.convert("RGB")
+            rgb.save(buffered, format="JPEG", quality=85, optimize=True)
         return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
     def _create_with_retry(
